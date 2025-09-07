@@ -1,0 +1,69 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Polling App - Project Rules
+
+## 1. Form Management Rules
+- **MUST** use `react-hook-form` with `@hookform/resolvers` for all form handling
+- **MUST** use `zod` for form validation schemas
+- **MUST** use shadcn/ui `Form` components (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormMessage`) instead of basic HTML form elements
+- **MUST** implement proper error handling with `FormMessage` components
+- **MUST** use `useForm` hook with `resolver: zodResolver(schema)` pattern
+- **AVOID** manual state management for form fields (use `register` or `Controller`)
+
+## 2. Supabase Integration Rules
+- **MUST** use `createClient()` from `@/lib/supabase/client` for client-side operations
+- **MUST** use `createClient()` from `@/lib/supabase/server` for server-side operations
+- **MUST** use `useAuth()` hook from `@/components/auth/auth-provider` for authentication state
+- **MUST** implement proper error handling for all Supabase operations with try-catch blocks
+- **MUST** use RLS (Row Level Security) policies for data access control
+- **MUST** handle loading states during async operations
+
+## 3. Component Structure Rules
+- **MUST** place all components in `/components` directory with feature-based subdirectories
+- **MUST** use `"use client"` directive for client components
+- **MUST** export components as named exports (e.g., `export function ComponentName()`)
+- **MUST** use TypeScript with proper type definitions
+- **MUST** use shadcn/ui components from `@/components/ui/*` instead of custom implementations
+- **MUST** follow the pattern: `Card` > `CardHeader` > `CardTitle` + `CardDescription` > `CardContent`
+
+## 4. Page Structure Rules
+- **MUST** place pages in `/app` directory following Next.js 13+ App Router structure
+- **MUST** use server components by default, client components only when necessary
+- **MUST** implement proper loading states and error boundaries
+- **MUST** use `async` functions for server components that need data fetching
+- **MUST** follow the pattern: `min-h-svh w-full p-6 md:p-10` for page containers
+- **MUST** use `mx-auto max-w-*` for content width constraints
+
+## 5. API and Environment Rules
+- **MUST** use environment variables for all external API endpoints
+- **MUST** use `VITE_API_URL` environment variable for API calls (no proxy usage)
+- **MUST** implement proper error handling for all API calls
+- **MUST** use proper HTTP status codes and error messages
+- **MUST** validate all inputs before sending to APIs
+
+## 6. Styling and UI Rules
+- **MUST** use Tailwind CSS classes for styling
+- **MUST** use shadcn/ui component variants and sizes consistently
+- **MUST** follow the design system: `space-y-*`, `gap-*`, `flex`, `grid` patterns
+- **MUST** use `text-muted-foreground` for secondary text
+- **MUST** use `Button` component with proper variants (`outline`, `default`, `destructive`)
+- **MUST** implement responsive design with `md:`, `lg:` breakpoints
+
+## 7. Authentication and Authorization Rules
+- **MUST** protect routes using middleware for authentication
+- **MUST** redirect unauthenticated users to `/auth/login`
+- **MUST** use `useAuth()` hook to check authentication state
+- **MUST** implement proper loading states during authentication checks
+- **MUST** handle authentication errors gracefully
+- **MUST** use Supabase RLS policies for data access control
+
+## 8. Error Handling Rules
+- **MUST** implement comprehensive error handling for all async operations
+- **MUST** display user-friendly error messages
+- **MUST** use proper error types and instanceof checks
+- **MUST** implement loading states during async operations
+- **MUST** handle network errors and validation errors separately
+- **MUST** use `FormMessage` components for form validation errors
