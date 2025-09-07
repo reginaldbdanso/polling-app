@@ -123,3 +123,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for poll results */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--progress-width);
+  }
+}
+
+/* Poll results specific styles */
+.poll-option {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.poll-progress {
+  animation: progressFill 1s ease-out forwards;
+}
