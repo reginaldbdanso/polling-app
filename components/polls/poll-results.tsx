@@ -4,8 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Trophy, Users, Calendar } from "lucide-react"
-import { useMemo } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RefreshCw, Trophy, Users, Calendar, BarChart3, PieChart, TrendingUp } from "lucide-react"
+import { useMemo, useState } from "react"
+import { 
+  PieChart as RechartsPieChart, 
+  Pie, 
+  Cell, 
+  BarChart as RechartsBarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  Legend
+} from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
 interface PollOption {
   id: string
@@ -25,6 +42,26 @@ interface PollResultsProps {
     user_vote?: string | null
   }
   onRefresh?: () => void
+}
+
+type ChartType = "bar" | "pie" | "area"
+
+// Color palette for charts
+const COLORS = [
+  "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#8dd1e1", 
+  "#d084d0", "#ffb347", "#87ceeb", "#dda0dd", "#98fb98"
+]
+
+// Chart configuration for shadcn/ui charts
+const chartConfig = {
+  votes: {
+    label: "Votes",
+    color: "hsl(var(--chart-1))",
+  },
+  percentage: {
+    label: "Percentage",
+    color: "hsl(var(--chart-2))",
+  },
 }
 
 // Helper function to calculate percentage
@@ -90,6 +127,50 @@ const renderStatusBadges = (hasExpired: boolean, isActive: boolean, pollIsActive
       )}
     </div>
   )
+}
+
+// Custom tooltip for pie chart
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-900">{data.option_text}</p>
+        <p className="text-sm text-gray-600">
+          <span className="font-medium">{data.vote_count}</span> votes ({data.percentage.toFixed(1)}%)
+        </p>
+        {data.isUserVote && (
+          <p className="text-xs text-blue-600 font-medium">Your Vote</p>
+        )}
+        {data.isWinner && (
+          <p className="text-xs text-yellow-600 font-medium">Winner</p>
+        )}
+      </div>
+    )
+  }
+  return null
+}
+
+// Custom tooltip for bar chart
+const CustomBarTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-900">{label}</p>
+        <p className="text-sm text-gray-600">
+          <span className="font-medium">{data.vote_count}</span> votes ({data.percentage.toFixed(1)}%)
+        </p>
+        {data.isUserVote && (
+          <p className="text-xs text-blue-600 font-medium">Your Vote</p>
+        )}
+        {data.isWinner && (
+          <p className="text-xs text-yellow-600 font-medium">Winner</p>
+        )}
+      </div>
+    )
+  }
+  return null
 }
 
 // Individual poll option component for better separation of concerns
@@ -161,7 +242,130 @@ function PollOptionItem({
   )
 }
 
+// Chart components
+function PieChartComponent({ data, totalVotes }: { data: any[], totalVotes: number }) {
+  return (
+    <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[500px]">
+      <RechartsPieChart
+        accessibilityLayer
+        title="Poll Results Pie Chart"
+        role="img"
+        aria-label={`Pie chart showing poll results with ${totalVotes} total votes`}
+      >
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ option_text, percentage }) => `${option_text}: ${percentage.toFixed(1)}%`}
+          outerRadius={120}
+          fill="#8884d8"
+          dataKey="vote_count"
+          animationBegin={0}
+          animationDuration={1000}
+        >
+          {data.map((entry, index) => (
+            <Cell 
+              key={`cell-${index}`} 
+              fill={entry.isUserVote ? "#3b82f6" : entry.isWinner ? "#f59e0b" : COLORS[index % COLORS.length]} 
+            />
+          ))}
+        </Pie>
+        <RechartsTooltip content={<CustomPieTooltip />} />
+        <Legend />
+      </RechartsPieChart>
+    </ChartContainer>
+  )
+}
+
+function BarChartComponent({ data }: { data: any[] }) {
+  return (
+    <ChartContainer config={chartConfig} className="mx-auto aspect-video max-h-[500px]">
+      <RechartsBarChart
+        data={data}
+        accessibilityLayer
+        title="Poll Results Bar Chart"
+        role="img"
+        aria-label={`Bar chart showing poll results with vote counts for each option`}
+        margin={{
+          top: 20,
+          right: 30,
+          left: 20,
+          bottom: 5,
+        }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+          dataKey="option_text" 
+          angle={-45}
+          textAnchor="end"
+          height={100}
+          interval={0}
+        />
+        <YAxis />
+        <RechartsTooltip content={<CustomBarTooltip />} />
+        <Bar 
+          dataKey="vote_count" 
+          fill="#8884d8"
+          radius={[4, 4, 0, 0]}
+          animationBegin={0}
+          animationDuration={1000}
+        >
+          {data.map((entry, index) => (
+            <Cell 
+              key={`cell-${index}`} 
+              fill={entry.isUserVote ? "#3b82f6" : entry.isWinner ? "#f59e0b" : COLORS[index % COLORS.length]} 
+            />
+          ))}
+        </Bar>
+      </RechartsBarChart>
+    </ChartContainer>
+  )
+}
+
+function AreaChartComponent({ data }: { data: any[] }) {
+  // For area chart, we'll simulate time-based data by creating cumulative data
+  const areaData = data.map((item, index) => ({
+    ...item,
+    cumulative: data.slice(0, index + 1).reduce((sum, d) => sum + d.vote_count, 0)
+  }))
+
+  return (
+    <ChartContainer config={chartConfig} className="mx-auto aspect-video max-h-[500px]">
+      <AreaChart
+        data={areaData}
+        accessibilityLayer
+        title="Poll Results Area Chart"
+        role="img"
+        aria-label={`Area chart showing poll results with vote distribution`}
+        margin={{
+          top: 20,
+          right: 30,
+          left: 20,
+          bottom: 5,
+        }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="option_text" />
+        <YAxis />
+        <RechartsTooltip content={<CustomBarTooltip />} />
+        <Area
+          type="monotone"
+          dataKey="vote_count"
+          stroke="#8884d8"
+          fill="#8884d8"
+          fillOpacity={0.6}
+          animationBegin={0}
+          animationDuration={1000}
+        />
+      </AreaChart>
+    </ChartContainer>
+  )
+}
+
 export function PollResults({ poll, onRefresh }: PollResultsProps) {
+  const [activeChart, setActiveChart] = useState<ChartType>("bar")
+
   // Memoize expensive calculations
   const pollData = useMemo(() => {
     const totalVotes = poll.options.reduce((sum, option) => sum + option.vote_count, 0)
@@ -169,15 +373,31 @@ export function PollResults({ poll, onRefresh }: PollResultsProps) {
     const isActive = poll.is_active && !hasExpired
     const sortedOptions = [...poll.options].sort((a, b) => b.vote_count - a.vote_count)
     
+    // Prepare data for charts
+    const chartData = sortedOptions.map((option, index) => {
+      const percentage = calculatePercentage(option.vote_count, totalVotes)
+      const isUserVote = poll.user_vote === option.id
+      const isWinner = index === 0 && totalVotes > 0
+      
+      return {
+        ...option,
+        percentage,
+        isUserVote,
+        isWinner,
+        index
+      }
+    })
+    
     return {
       totalVotes,
       hasExpired,
       isActive,
-      sortedOptions
+      sortedOptions,
+      chartData
     }
-  }, [poll.options, poll.expires_at, poll.is_active])
+  }, [poll.options, poll.expires_at, poll.is_active, poll.user_vote])
 
-  const { totalVotes, hasExpired, isActive, sortedOptions } = pollData
+  const { totalVotes, hasExpired, isActive, sortedOptions, chartData } = pollData
 
   return (
     <Card className="w-full shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
@@ -194,25 +414,86 @@ export function PollResults({ poll, onRefresh }: PollResultsProps) {
           {renderStatusBadges(hasExpired, isActive, poll.is_active)}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-4">
-          {sortedOptions.map((option, index) => {
-            const percentage = calculatePercentage(option.vote_count, totalVotes)
-            const isUserVote = poll.user_vote === option.id
-            const isWinner = index === 0 && totalVotes > 0
+      <CardContent className="space-y-6">
+        {/* Chart Visualization Section */}
+        {totalVotes > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Visualization</h3>
+              <Tabs value={activeChart} onValueChange={(value) => setActiveChart(value as ChartType)}>
+                <TabsList 
+                  className="grid w-full grid-cols-3"
+                  role="tablist"
+                  aria-label="Chart type selection"
+                >
+                  <TabsTrigger 
+                    value="bar" 
+                    className="flex items-center gap-2"
+                    role="tab"
+                    aria-label="Bar chart view"
+                    aria-describedby="chart-description"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Bar
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="pie" 
+                    className="flex items-center gap-2"
+                    role="tab"
+                    aria-label="Pie chart view"
+                    aria-describedby="chart-description"
+                  >
+                    <PieChart className="h-4 w-4" />
+                    Pie
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="area" 
+                    className="flex items-center gap-2"
+                    role="tab"
+                    aria-label="Area chart view"
+                    aria-describedby="chart-description"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Area
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div id="chart-description" className="sr-only">
+              Interactive chart showing poll results. Use arrow keys to navigate between data points. 
+              Press Tab to switch between chart types.
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-gray-200">
+              {activeChart === "pie" && <PieChartComponent data={chartData} totalVotes={totalVotes} />}
+              {activeChart === "bar" && <BarChartComponent data={chartData} />}
+              {activeChart === "area" && <AreaChartComponent data={chartData} />}
+            </div>
+          </div>
+        )}
 
-            return (
-              <PollOptionItem
-                key={option.id}
-                option={option}
-                index={index}
-                percentage={percentage}
-                isUserVote={isUserVote}
-                isWinner={isWinner}
-                totalVotes={totalVotes}
-              />
-            )
-          })}
+        {/* Traditional List View */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Detailed Results</h3>
+          <div className="space-y-4">
+            {sortedOptions.map((option, index) => {
+              const percentage = calculatePercentage(option.vote_count, totalVotes)
+              const isUserVote = poll.user_vote === option.id
+              const isWinner = index === 0 && totalVotes > 0
+
+              return (
+                <PollOptionItem
+                  key={option.id}
+                  option={option}
+                  index={index}
+                  percentage={percentage}
+                  isUserVote={isUserVote}
+                  isWinner={isWinner}
+                  totalVotes={totalVotes}
+                />
+              )
+            })}
+          </div>
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4 border-t border-gray-200">

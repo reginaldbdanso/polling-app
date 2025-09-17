@@ -19,7 +19,7 @@ const mockPoll = {
     { id: "opt-4", option_text: "Go", vote_count: 18 },
     { id: "opt-5", option_text: "Java", vote_count: 15 },
   ],
-  user_vote: null
+  user_vote: "opt-1"
 }
 
 export default function TestPollPage() {
